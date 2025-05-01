@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do List Revenue Stream</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="icon" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/webfonts/fa-solid-900.woff2" type="image/x-icon">
+    <link rel="icon" type="image/x-icon" href="ico.ico" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            max-width: 800px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .tier {
+            margin: 20px 0;
+            position: relative;
+        }
+        .tier-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .tier h2 {
+            color: #007bff;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 5px;
+            margin: 0;
+        }
+        .add-task-btn {
+            display: none;
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        .tier-header:hover .add-task-btn {
+            display: inline-block;
+        }
+        .task-list {
+            list-style: none;
+            padding: 0;
+        }
+        .task-item-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+            padding: 0 0px; /* Mengurangi padding dari 90px menjadi 40px agar lebih dekat ke tepi */
+        }
+        .task-item {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+        .task-item-container:hover .task-item {
+            background: #e0e7ff;
+        }
+        .task-item-container:hover .edit-button,
+        .task-item-container:hover .delete-button {
+            display: flex;
+        }
+        .task-item input[type="checkbox"] {
+            margin-right: 10px;
+        }
+        .task-item label {
+            flex: 1;
+            color: #333;
+            cursor: pointer;
+        }
+        .task-item .completed {
+            text-decoration: line-through;
+            color: #888;
+        }
+        .task-item .potential {
+            font-size: 0.9em;
+            color: #28a745;
+            margin-left: 10px;
+        }
+        .edit-button, .delete-button {
+            display: none;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .edit-button {
+            left: -45px; /* Menyesuaikan posisi tombol Edit dengan padding baru */
+        }
+        .delete-button {
+            right: -61px; /* Menyesuaikan posisi tombol Hapus dengan padding baru */
+        }
+        .edit-button button, .delete-button button {
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        .edit-btn {
+            background: #007bff;
+            color: white;
+        }
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 500px;
+        }
+        .modal-content input {
+            width: 95%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .modal-content button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .modal-content button.cancel {
+            background: #dc3545;
+            margin-left: 10px;
+        }
+        .motivational-quote {
+            text-align: center;
+            font-style: italic;
+            color: #666;
+            margin-top: 20px;
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+            }
+            .task-item label {
+                font-size: 0.9em;
+            }
+            .modal-content {
+                width: 90%;
+            }
+            .task-item-container {
+                padding: 0;
+            }
+            .edit-button, .delete-button {
+                display: flex;
+                position: static;
+                transform: none;
+            }
+            .edit-button {
+                margin-x: 100px;
+            }
+            .delete-button {
+                margin-x: 100px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>To-Do List Revenue Stream</h1>
+        
+        <div class="tier" id="tier1-section">
+            <div class="tier-header">
+                <h2>Tier 1: Low Effort, Low Investment</h2>
+                <button class="add-task-btn" onclick="openModal('tier1', 'add')">Tambah To-Do</button>
+            </div>
+            <p>Potensi Pendapatan: Rp 500.000 - Rp 3.000.000/bulan</p>
+            <ul class="task-list" id="tier1">
+                <li class="task-item-container" data-task-id="t1-task1">
+                    <div class="edit-button">
+                        <button class="edit-btn" onclick="openModal('tier1', 'edit', 't1-task1')">Edit</button>
+                    </div>
+                    <div class="task-item">
+                        <input type="checkbox" id="t1-task1">
+                        <label for="t1-task1">Daftar di platform freelance lokal seperti Projects.co.id atau Sribulancer untuk menawarkan jasa pengelolaan to-do list atau data entry.</label>
+                        <span class="potential">~Rp 50.000/proyek</span>
+                    </div>
+                    <div class="delete-button">
+                        <button class="delete-btn" onclick="deleteTask('tier1', 't1-task1')">Hapus</button>
+                    </div>
+                </li>
+                <li class="task-item-container" data-task-id="t1-task2">
+                    <div class="edit-button">
+                        <button class="edit-btn" onclick="openModal('tier1', 'edit', 't1-task2')">Edit</button>
+                    </div>
+                    <div class="task-item">
+                        <input type="checkbox" id="t1-task2">
+                        <label for="t1-task2">Buat profil Fiverr untuk jasa sederhana (misalnya, membuat template to-do list HTML atau checklist digital).</label>
+                        <span class="potential">~$5-20/gig</span>
+                    </div>
+                    <div class="delete-button">
+                        <button class="delete-btn" onclick="deleteTask('tier1', 't1-task2')">Hapus</button>
+                    </div>
+                </li>
+                <li class="task-item-container" data-task-id="t1-task3">
+                    <div class="edit-button">
+                        <button class="edit-btn" onclick="openModal('tier1', 'edit', 't1-task3')">Edit</button>
+                    </div>
+                    <div class="task-item">
+                        <input type="checkbox" id="t1-task3">
+                        <label for="t1-task3">Jual produk digital seperti printable planner/to-do list di Shopee atau Etsy menggunakan Canva (gratis).</label>
+                        <span class="potential">Rp 10.000-50.000/item</span>
+                    </div>
+                    <div class="delete-button">
+                        <button class="delete-btn" onclick="deleteTask('tier1', 't1-task3')">Hapus</button>
+                    </div>
+                </li>
+                <li class="task-item-container" data-task-id="t1-task4">
+                    <div class="edit-button">
+                        <button class="edit-btn" onclick="openModal('tier1', 'edit', 't1-task4')">Edit</button>
+                    </div>
+                    <div class="task-item">
+                        <input type="checkbox" id="t1-task4">
+                        <label for="t1-task4">Promosikan jasa di grup WhatsApp/Telegram lokal (misalnya, komunitas UMKM) dengan contoh to-do list interaktif.</label>
+                        <span class="potential">Rp 100.000-500.000/klien</span>
+                    </div>
+                    <div class="delete-button">
+                        <button class="delete-btn" onclick="deleteTask('tier1', 't1-task4')">Hapus</button>
+                    </div>
+                </li>
+            </ul>
+        </div>
+
+        <div class="tier" id="tier2-section">
+            <div class="tier-header">
+                <h2>Tier 2: Medium Effort, Moderate Investment</h2>
+                <button class="add-task-btn" onclick="openModal('tier2', 'add')">Tambah To-Do</button>
+            </div>
+            <p>Potensi Pendapatan: Rp 3.000.000 - Rp 10.000.000/bulan</p>
+            <ul class="task-list" id="tier2">
+                <li class="task-item-container" data-task-id="t2-task1">
+                    <div class="edit-button">
+                        <button class="edit-btn" onclick="openModal('tier2', 'edit', 't2-task1')">Edit</button>
+                    </div>
+                    <div class="task-item">
+                        <input type="checkbox" id="t2-task1">
+                        <label for="t2-task1">Pelajari dasar Bootstrap dan React (1 minggu via freeCodeCamp) untuk membuat website sederhana untuk UMKM lokal.</label>
+                        <span class="potential">Rp 1-3 juta/proyek</span>
+                    </div>
+                    <div class="delete-button">
+                        <button class="delete-btn" onclick="deleteTask('tier2', 't2-task1')">Hapus</button>
+                    </div>
+                </li>
+                <li class="task-item-container" data-task-id="t2-task2">
+                    <div class="edit-button">
+                        <button class="edit-btn" onclick="openModal('tier2', 'edit', 't2-task2')">Edit</button>
+                    </div>
+                    <div class="task-item">
+                        <input type="checkbox" id="t2-task2">
+                        <label for="t2-task2">Tawarkan jasa pembuatan website toko online di Upwork menggunakan pengalamanmu dengan e-commerce (contoh: Toko Rendang).</label>
+                        <span class="potential">~$50-200/proyek</span>
+                    </div>
+                    <div class="delete-button">
+                        <button class="delete-btn" onclick="deleteTask('tier2', 't2-task2')">Hapus</button>
+                    </div>
+                </li>
+                <li class="task-item-container" data-task-id="t2-task3">
+                    <div class="edit-button">
+                        <button class="edit-btn" onclick="openModal('tier2', 'edit', 't2-task3')">Edit</button>
+                    </div>
+                    <div class="task-item">
+                        <input type="checkbox" id="t2-task3">
+                        <label for="t2-task3">Buat konten tutorial singkat (misalnya, "Cara Membuat To-Do List Interaktif") di TikTok/YouTube, monetisasi via sponsor atau afiliasi.</label>
+                        <span class="potential">Rp 500.000-2 juta/bulan</span>
+                    </div>
+                    <div class="delete-button">
+                        <button class="delete-btn" onclick="deleteTask('tier2', 't2-task3')">Hapus</button>
+                    </div>
+                </li>
+                <li class="task-item-container" data-task-id="t2-task4">
+                    <div class="edit-button">
+                        <button class="edit-btn" onclick="openModal('tier2', 'edit', 't2-task4')">Edit</button>
+                    </div>
+                    <div class="task-item">
+                        <input type="checkbox" id="t2-task4">
+                        <label for="t2-task4">Jual template website sederhana (misalnya, to-do list atau portfolio) di marketplace seperti ThemeForest.</label>
+                        <span class="potential">~$10-50/template</span>
+                    </div>
+                    <div class="delete-button">
+                        <button class="delete-btn" onclick="deleteTask('tier2', 't2-task4')">Hapus</button>
+                    </div>
+                </li>
+                <li class="task-item-container" data-task-id="t2-task5">
+                    <div class="edit-button">
+                        <button class="edit-btn" onclick="openModal('tier2', 'edit', 't2-task5')">Edit</button>
+                    </div>
+                    <div class="task-item">
+                        <input type="checkbox" id="t2-task5">
+                        <label for="t2-task5">main clarinet</label>
+                        <span class="potential">Rp 9.000</span>
+                    </div>
+                    <div class="delete-button">
+                        <button class="delete-btn" onclick="deleteTask('tier2', 't2-task5')">Hapus</button>
+                    </div>
+                </li>
+            </ul>
+        </div>
+
+        <div class="tier" id="tier3-section">
+            <div class="tier-header">
+                <h2>Tier 3: High Effort, High Investment</h2>
+                <button class="add-task-btn" onclick="openModal('tier3', 'add')">Tambah To-Do</button>
+            </div>
+            <p>Potensi Pendapatan: >Rp 10.000.000/bulan</p>
+            <ul class="task-list" id="tier3">
+                <li class="task-item-container" data-task-id="t3-task1">
+                    <div class="edit-button">
+                        <button class="edit-btn" onclick="openModal('tier3', 'edit', 't3-task1')">Edit</button>
+                    </div>
+                    <div class="task-item">
+                        <input type="checkbox" id="t3-task1">
+                        <label for="t3-task1">Bangun portofolio sebagai Front-End Developer dengan 3-5 proyek (misalnya, e-commerce atau task manager) di GitHub.</label>
+                        <span class="potential">Rp 5-15 juta/proyek</span>
+                    </div>
+                    <div class="delete-button">
+                        <button class="delete-btn" onclick="deleteTask('tier3', 't3-task1')">Hapus</button>
+                    </div>
+                </li>
+                <li class="task-item-container" data-task-id="t3-task2">
+                    <div class="edit-button">
+                        <button class="edit-btn" onclick="openModal('tier3', 'edit', 't3-task2')">Edit</button>
+                    </div>
+                    <div class="task-item">
+                        <input type="checkbox" id="t3-task2">
+                        <label for="t3-task2">Daftar di Toptal atau Turing untuk proyek freelance internasional (fokus pada JavaScript/React).</label>
+                        <span class="potential">~$500-2000/proyek</span>
+                    </div>
+                    <div class="delete-button">
+                        <button class="delete-btn" onclick="deleteTask('tier3', 't3-task2')">Hapus</button>
+                    </div>
+                </li>
+                <li class="task-item-container" data-task-id="t3-task3">
+                    <div class="edit-button">
+                        <button class="edit-btn" onclick="openModal('tier3', 'edit', 't3-task3')">Edit</button>
+                    </div>
+                    <div class="task-item">
+                        <input type="checkbox" id="t3-task3">
+                        <label for="t3-task3">Kembangkan aplikasi web sederhana (misalnya, task management app) dan jual lisensinya ke bisnis kecil.</label>
+                        <span class="potential">Rp 10-50 juta/tahun</span>
+                    </div>
+                    <div class="delete-button">
+                        <button class="delete-btn" onclick="deleteTask('tier3', 't3-task3')">Hapus</button>
+                    </div>
+                </li>
+                <li class="task-item-container" data-task-id="t3-task4">
+                    <div class="edit-button">
+                        <button class="edit-btn" onclick="openModal('tier3', 'edit', 't3-task4')">Edit</button>
+                    </div>
+                    <div class="task-item">
+                        <input type="checkbox" id="t3-task4">
+                        <label for="t3-task4">Investasikan Rp 2-5 juta untuk iklan targeted di Instagram/Facebook untuk memasarkan jasa pengembangan web.</label>
+                        <span class="potential">ROI 2-5x</span>
+                    </div>
+                    <div class="delete-button">
+                        <button class="delete-btn" onclick="deleteTask('tier3', 't3-task4')">Hapus</button>
+                    </div>
+                </li>
+            </ul>
+        </div>
+
+        <p class="motivational-quote">"Mulailah dari langkah kecil, tetapi konsisten. Setiap tugas yang diselesaikan membawa kamu lebih dekat ke tujuan finansialmu!"</p>
+    </div>
+
+    <div class="modal" id="task-modal">
+        <div class="modal-content">
+            <h3 id="modal-title">Tambah Tugas Baru</h3>
+            <input type="text" id="task-name" placeholder="Nama Tugas">
+            <input type="text" id="task-potential" placeholder="Potensi Pendapatan (contoh: Rp 100.000)">
+            <button id="modal-submit-btn" onclick="submitTask()">Tambah</button>
+            <button class="cancel" onclick="closeModal()">Batal</button>
+        </div>
+    </div>
+
+    <script>
+        let currentTier = '';
+        let currentMode = 'add'; // 'add' or 'edit'
+        let currentTaskId = '';
+
+        // Open modal for adding or editing task
+        function openModal(tier, mode, taskId = '') {
+            currentTier = tier;
+            currentMode = mode;
+            currentTaskId = taskId;
+
+            const modal = document.getElementById('task-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const submitBtn = document.getElementById('modal-submit-btn');
+            const taskNameInput = document.getElementById('task-name');
+            const taskPotentialInput = document.getElementById('task-potential');
+
+            if (mode === 'edit') {
+                modalTitle.textContent = 'Edit Tugas';
+                submitBtn.textContent = 'Simpan';
+                const taskLabel = document.querySelector(`label[for="${taskId}"]`).textContent;
+                const taskPotential = document.querySelector(`#${taskId}`).parentElement.querySelector('.potential').textContent;
+                taskNameInput.value = taskLabel;
+                taskPotentialInput.value = taskPotential;
+            } else {
+                modalTitle.textContent = 'Tambah Tugas Baru';
+                submitBtn.textContent = 'Tambah';
+                taskNameInput.value = '';
+                taskPotentialInput.value = '';
+            }
+
+            modal.style.display = 'flex';
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('task-modal').style.display = 'none';
+        }
+
+        // Submit task (add or edit)
+        function submitTask() {
+            const taskName = document.getElementById('task-name').value.trim();
+            const taskPotential = document.getElementById('task-potential').value.trim();
+            if (!taskName || !taskPotential) {
+                alert('Nama tugas dan potensi pendapatan harus diisi!');
+                return;
+            }
+
+            const taskList = document.getElementById(currentTier);
+            let tasks = JSON.parse(localStorage.getItem(`${currentTier}-tasks`) || '[]');
+
+            if (currentMode === 'add') {
+                const taskCount = taskList.querySelectorAll('.task-item').length + 1;
+                const taskId = `${currentTier}-task${taskCount}`;
+                const li = document.createElement('li');
+                li.className = 'task-item-container';
+                li.setAttribute('data-task-id', taskId);
+                li.innerHTML = `
+                    <div class="edit-button">
+                        <button class="edit-btn" onclick="openModal('${currentTier}', 'edit', '${taskId}')">Edit</button>
+                    </div>
+                    <div class="task-item">
+                        <input type="checkbox" id="${taskId}">
+                        <label for="${taskId}">${taskName}</label>
+                        <span class="potential">${taskPotential}</span>
+                    </div>
+                    <div class="delete-button">
+                        <button class="delete-btn" onclick="deleteTask('${currentTier}', '${taskId}')">Hapus</button>
+                    </div>
+                `;
+                taskList.appendChild(li);
+
+                tasks.push({ id: taskId, name: taskName, potential: taskPotential, checked: false, deleted: false });
+            } else {
+                const taskElement = document.querySelector(`#${currentTaskId}`).parentElement;
+                const label = taskElement.querySelector('label');
+                const potential = taskElement.querySelector('.potential');
+                label.textContent = taskName;
+                potential.textContent = taskPotential;
+
+                const taskIndex = tasks.findIndex(task => task.id === currentTaskId);
+                if (taskIndex !== -1) {
+                    tasks[taskIndex].name = taskName;
+                    tasks[taskIndex].potential = taskPotential;
+                } else {
+                    tasks.push({ id: currentTaskId, name: taskName, potential: taskPotential, checked: false, deleted: false });
+                }
+            }
+
+            localStorage.setItem(`${currentTier}-tasks`, JSON.stringify(tasks));
+
+            const checkbox = currentMode === 'add' ? taskList.lastElementChild.querySelector('input[type="checkbox"]') : document.getElementById(currentTaskId);
+            checkbox.addEventListener('change', () => {
+                updateTaskState(checkbox.id, checkbox.checked);
+                checkbox.nextElementSibling.className = checkbox.checked ? 'completed' : '';
+            });
+
+            closeModal();
+        }
+
+        // Delete task
+        function deleteTask(tier, taskId) {
+            const taskElement = document.querySelector(`#${taskId}`).parentElement.parentElement;
+            taskElement.remove();
+
+            let tasks = JSON.parse(localStorage.getItem(`${tier}-tasks`) || '[]');
+            const taskIndex = tasks.findIndex(task => task.id === taskId);
+            if (taskIndex !== -1) {
+                tasks[taskIndex].deleted = true;
+            } else {
+                tasks.push({ id: taskId, deleted: true });
+            }
+            localStorage.setItem(`${tier}-tasks`, JSON.stringify(tasks));
+        }
+
+        // Update task state in localStorage
+        function updateTaskState(taskId, checked) {
+            const tier = taskId.split('-')[0];
+            let tasks = JSON.parse(localStorage.getItem(`${tier}-tasks`) || '[]');
+            const taskIndex = tasks.findIndex(task => task.id === taskId);
+            if (taskIndex !== -1) {
+                tasks[taskIndex].checked = checked;
+            } else {
+                tasks.push({ id: taskId, checked: checked, deleted: false });
+            }
+            localStorage.setItem(`${tier}-tasks`, JSON.stringify(tasks));
+        }
+
+        // Load tasks and states from localStorage
+        document.addEventListener('DOMContentLoaded', () => {
+            const tiers = ['tier1', 'tier2', 'tier3'];
+            tiers.forEach(tier => {
+                const taskList = document.getElementById(tier);
+                let tasks = JSON.parse(localStorage.getItem(`${tier}-tasks`) || '[]');
+
+                // Filter default tasks based on deleted status
+                const defaultTasks = taskList.querySelectorAll('.task-item-container');
+                defaultTasks.forEach(taskElement => {
+                    const taskId = taskElement.getAttribute('data-task-id');
+                    const taskData = tasks.find(task => task.id === taskId);
+                    if (taskData && taskData.deleted) {
+                        taskElement.remove();
+                    } else {
+                        const checkbox = taskElement.querySelector('input[type="checkbox"]');
+                        if (taskData && taskData.checked) {
+                            checkbox.checked = true;
+                            checkbox.nextElementSibling.className = 'completed';
+                        }
+                        checkbox.addEventListener('change', () => {
+                            updateTaskState(taskId, checkbox.checked);
+                            checkbox.nextElementSibling.className = checkbox.checked ? 'completed' : '';
+                        });
+                    }
+                });
+
+                // Load additional tasks
+                tasks.forEach(task => {
+                    if (!task.deleted && !taskList.querySelector(`#${task.id}`)) {
+                        const li = document.createElement('li');
+                        li.className = 'task-item-container';
+                        li.setAttribute('data-task-id', task.id);
+                        li.innerHTML = `
+                            <div class="edit-button">
+                                <button class="edit-btn" onclick="openModal('${tier}', 'edit', '${task.id}')">Edit</button>
+                            </div>
+                            <div class="task-item">
+                                <input type="checkbox" id="${task.id}" ${task.checked ? 'checked' : ''}>
+                                <label for="${task.id}" ${task.checked ? 'class="completed"' : ''}>${task.name}</label>
+                                <span class="potential">${task.potential}</span>
+                            </div>
+                            <div class="delete-button">
+                                <button class="delete-btn" onclick="deleteTask('${tier}', '${task.id}')">Hapus</button>
+                            </div>
+                        `;
+                        taskList.appendChild(li);
+
+                        const checkbox = li.querySelector('input[type="checkbox"]');
+                        checkbox.addEventListener('change', () => {
+                            updateTaskState(task.id, checkbox.checked);
+                            checkbox.nextElementSibling.className = checkbox.checked ? 'completed' : '';
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
