@@ -65,7 +65,7 @@
             display: flex;
             align-items: center;
             margin: 5px 0;
-            padding: 0 0px; /* Mengurangi padding dari 90px menjadi 40px agar lebih dekat ke tepi */
+            padding: 0 0px;
         }
         .task-item {
             flex: 1;
@@ -107,10 +107,10 @@
             transform: translateY(-50%);
         }
         .edit-button {
-            left: -45px; /* Menyesuaikan posisi tombol Edit dengan padding baru */
+            left: -45px;
         }
         .delete-button {
-            right: -61px; /* Menyesuaikan posisi tombol Hapus dengan padding baru */
+            right: -61px;
         }
         .edit-button button, .delete-button button {
             border: none;
@@ -465,27 +465,26 @@
             let tasks = JSON.parse(localStorage.getItem(`${currentTier}-tasks`) || '[]');
 
             if (currentMode === 'add') {
-                const taskCount = taskList.querySelectorAll('.task-item').length + 1;
-                const taskId = `${currentTier}-task${taskCount}`;
+                const newTaskId = `${currentTier}-task${Date.now()}`; // Unique ID based on timestamp
                 const li = document.createElement('li');
                 li.className = 'task-item-container';
-                li.setAttribute('data-task-id', taskId);
+                li.setAttribute('data-task-id', newTaskId);
                 li.innerHTML = `
                     <div class="edit-button">
-                        <button class="edit-btn" onclick="openModal('${currentTier}', 'edit', '${taskId}')">Edit</button>
+                        <button class="edit-btn" onclick="openModal('${currentTier}', 'edit', '${newTaskId}')">Edit</button>
                     </div>
                     <div class="task-item">
-                        <input type="checkbox" id="${taskId}">
-                        <label for="${taskId}">${taskName}</label>
+                        <input type="checkbox" id="${newTaskId}">
+                        <label for="${newTaskId}">${taskName}</label>
                         <span class="potential">${taskPotential}</span>
                     </div>
                     <div class="delete-button">
-                        <button class="delete-btn" onclick="deleteTask('${currentTier}', '${taskId}')">Hapus</button>
+                        <button class="delete-btn" onclick="deleteTask('${currentTier}', '${newTaskId}')">Hapus</button>
                     </div>
                 `;
                 taskList.appendChild(li);
 
-                tasks.push({ id: taskId, name: taskName, potential: taskPotential, checked: false, deleted: false });
+                tasks.push({ id: newTaskId, name: taskName, potential: taskPotential, checked: false, deleted: false });
             } else {
                 const taskElement = document.querySelector(`#${currentTaskId}`).parentElement;
                 const label = taskElement.querySelector('label');
@@ -497,20 +496,13 @@
                 if (taskIndex !== -1) {
                     tasks[taskIndex].name = taskName;
                     tasks[taskIndex].potential = taskPotential;
-                } else {
-                    tasks.push({ id: currentTaskId, name: taskName, potential: taskPotential, checked: false, deleted: false });
                 }
             }
 
             localStorage.setItem(`${currentTier}-tasks`, JSON.stringify(tasks));
 
-            const checkbox = currentMode === 'add' ? taskList.lastElementChild.querySelector('input[type="checkbox"]') : document.getElementById(currentTaskId);
-            checkbox.addEventListener('change', () => {
-                updateTaskState(checkbox.id, checkbox.checked);
-                checkbox.nextElementSibling.className = checkbox.checked ? 'completed' : '';
-            });
-
             closeModal();
+            reloadTasks(); // Reload tasks to ensure proper state
         }
 
         // Delete task
@@ -522,55 +514,37 @@
             const taskIndex = tasks.findIndex(task => task.id === taskId);
             if (taskIndex !== -1) {
                 tasks[taskIndex].deleted = true;
-            } else {
-                tasks.push({ id: taskId, deleted: true });
             }
             localStorage.setItem(`${tier}-tasks`, JSON.stringify(tasks));
+            reloadTasks(); // Reload tasks after deletion
         }
 
-        // Update task state in localStorage
-        function updateTaskState(taskId, checked) {
-            const tier = taskId.split('-')[0];
-            let tasks = JSON.parse(localStorage.getItem(`${tier}-tasks`) || '[]');
-            const taskIndex = tasks.findIndex(task => task.id === taskId);
-            if (taskIndex !== -1) {
-                tasks[taskIndex].checked = checked;
-            } else {
-                tasks.push({ id: taskId, checked: checked, deleted: false });
-            }
-            localStorage.setItem(`${tier}-tasks`, JSON.stringify(tasks));
-        }
-
-        // Load tasks and states from localStorage
-        document.addEventListener('DOMContentLoaded', () => {
+        // Reload tasks from localStorage
+        function reloadTasks() {
             const tiers = ['tier1', 'tier2', 'tier3'];
             tiers.forEach(tier => {
                 const taskList = document.getElementById(tier);
-                let tasks = JSON.parse(localStorage.getItem(`${tier}-tasks`) || '[]');
+                taskList.innerHTML = ''; // Clear current list
+                let tasks = JSON.parse(localStorage.getItem(`${tier}-tasks`) || '[]').filter(task => !task.deleted);
 
-                // Filter default tasks based on deleted status
-                const defaultTasks = taskList.querySelectorAll('.task-item-container');
+                // Add default tasks
+                const defaultTasks = document.querySelectorAll(`#${tier}-section .task-item-container`);
                 defaultTasks.forEach(taskElement => {
                     const taskId = taskElement.getAttribute('data-task-id');
-                    const taskData = tasks.find(task => task.id === taskId);
-                    if (taskData && taskData.deleted) {
-                        taskElement.remove();
-                    } else {
-                        const checkbox = taskElement.querySelector('input[type="checkbox"]');
-                        if (taskData && taskData.checked) {
-                            checkbox.checked = true;
-                            checkbox.nextElementSibling.className = 'completed';
-                        }
-                        checkbox.addEventListener('change', () => {
-                            updateTaskState(taskId, checkbox.checked);
-                            checkbox.nextElementSibling.className = checkbox.checked ? 'completed' : '';
-                        });
-                    }
+                    const checkbox = taskElement.querySelector('input[type="checkbox"]');
+                    const label = taskElement.querySelector('label');
+                    const potential = taskElement.querySelector('.potential');
+                    const isChecked = tasks.find(t => t.id === taskId)?.checked || false;
+                    taskList.appendChild(taskElement.cloneNode(true));
+                    const newCheckbox = taskList.lastElementChild.querySelector('input[type="checkbox"]');
+                    newCheckbox.checked = isChecked;
+                    newCheckbox.nextElementSibling.className = isChecked ? 'completed' : '';
+                    newCheckbox.addEventListener('change', () => updateTaskState(taskId, newCheckbox.checked));
                 });
 
-                // Load additional tasks
+                // Add stored tasks
                 tasks.forEach(task => {
-                    if (!task.deleted && !taskList.querySelector(`#${task.id}`)) {
+                    if (!taskList.querySelector(`#${task.id}`)) {
                         const li = document.createElement('li');
                         li.className = 'task-item-container';
                         li.setAttribute('data-task-id', task.id);
@@ -588,15 +562,29 @@
                             </div>
                         `;
                         taskList.appendChild(li);
-
                         const checkbox = li.querySelector('input[type="checkbox"]');
-                        checkbox.addEventListener('change', () => {
-                            updateTaskState(task.id, checkbox.checked);
-                            checkbox.nextElementSibling.className = checkbox.checked ? 'completed' : '';
-                        });
+                        checkbox.addEventListener('change', () => updateTaskState(task.id, checkbox.checked));
                     }
                 });
             });
+        }
+
+        // Update task state in localStorage
+        function updateTaskState(taskId, checked) {
+            const tier = taskId.split('-')[0];
+            let tasks = JSON.parse(localStorage.getItem(`${tier}-tasks`) || '[]');
+            const taskIndex = tasks.findIndex(task => task.id === taskId);
+            if (taskIndex !== -1) {
+                tasks[taskIndex].checked = checked;
+            } else {
+                tasks.push({ id: taskId, checked: checked, deleted: false });
+            }
+            localStorage.setItem(`${tier}-tasks`, JSON.stringify(tasks));
+        }
+
+        // Load tasks and states from localStorage on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            reloadTasks();
         });
     </script>
 </body>
